@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>영수증은 사양합니다 (Standalone)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #0a0a0a;
+            color: #ededed;
+        }
+
+        .touch-action-none {
+            touch-action: none;
+        }
+
+        .animate-pop {
+            animation: pop 0.3s ease-out;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-[#0a0a0a] text-[#ededed]">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const MODES = {
+            NONE: 'none',
+            REFUSE: 'refuse',
+            REQUEST: 'request',
+            OPEN: 'open',
+            NO_POINTS: 'no_points',
+            NO_SAVING: 'no_saving',
+        };
+
+        const MESSAGES = {
+            [MODES.REFUSE]: {
+                text: "영수증은 괜찮습니다",
+                desc: "정중한 거절",
+                color: "bg-zinc-800 text-zinc-100",
+                icon: "x-circle",
+                fullColor: "bg-slate-950 text-white",
+            },
+            [MODES.REQUEST]: {
+                text: "영수증 부탁드립니다",
+                desc: "명확한 요청",
+                color: "bg-zinc-100 text-zinc-900 border border-zinc-300",
+                icon: "receipt",
+                fullColor: "bg-white text-black",
+            },
+            [MODES.NO_POINTS]: {
+                text: "포인트 없습니다",
+                desc: "간결한 답변",
+                color: "bg-zinc-800 text-zinc-100",
+                icon: "slash",
+                fullColor: "bg-zinc-900 text-white",
+            },
+            [MODES.NO_SAVING]: {
+                text: "적립 없습니다",
+                desc: "간결한 답변",
+                color: "bg-zinc-800 text-zinc-100",
+                icon: "minus-circle",
+                fullColor: "bg-zinc-950 text-white",
+            },
+            [MODES.OPEN]: {
+                text: "모든 질문 괜찮습니다",
+                desc: "상태 공유",
+                color: "bg-zinc-800 text-zinc-100",
+                icon: "message-circle",
+                fullColor: "bg-zinc-900 text-white",
+            },
+        };
+
+        function App() {
+            const [mode, setMode] = useState(() => {
+                return localStorage.getItem('lastMode') || MODES.NONE;
+            });
+
+            const [isFullscreen, setIsFullscreen] = useState(mode !== MODES.NONE);
+
+            useEffect(() => {
+                if (mode !== MODES.NONE) {
+                    localStorage.setItem('lastMode', mode);
+                    setIsFullscreen(true);
+                } else {
+                    localStorage.removeItem('lastMode');
+                    setIsFullscreen(false);
+                }
+                // Initialize Lucide icons after render
+                setTimeout(() => lucide.createIcons(), 0);
+            }, [mode]);
+
+            if (isFullscreen && mode !== MODES.NONE) {
+                const active = MESSAGES[mode];
+                return (
+                    <div
+                        className={`fixed inset-0 z-50 flex flex-col items-center justify-center p-8 transition-colors duration-100 ${active.fullColor}`}
+                        onClick={() => setIsFullscreen(false)}
+                    >
+                        <button
+                            className="absolute top-8 left-8 p-4 rounded-full bg-white/10 active:bg-white/20"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setMode(MODES.NONE);
+                            }}
+                        >
+                            <i data-lucide="chevron-left" style={{ width: 32, height: 32 }}></i>
+                        </button>
+
+                        <div className="text-center animate-pop">
+                            <h1 className="text-5xl md:text-7xl font-black leading-tight break-keep">
+                                {active.text}
+                            </h1>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <main className="max-w-md mx-auto min-h-screen flex flex-col p-6 space-y-6 justify-center">
+                    <header className="mb-4">
+                        <h1 className="text-2xl font-bold tracking-tight text-white mb-1">영수증은 사양합니다</h1>
+                        <p className="text-zinc-400 text-sm">결제 시 화면을 보여주세요.</p>
+                    </header>
+
+                    <div className="grid gap-4">
+                        {Object.entries(MESSAGES).map(([key, value]) => (
+                            <button
+                                key={key}
+                                onClick={() => setMode(key)}
+                                className={`flex flex-col items-center justify-center p-8 rounded-3xl transition-all h-52 ${value.color} hover:opacity-90 active:scale-95 touch-action-none`}
+                            >
+                                <i data-lucide={value.icon} style={{ width: 48, height: 48, marginBottom: 16 }}></i>
+                                <span className="text-xl font-bold">{value.text}</span>
+                                <span className="text-xs mt-2 opacity-50">{value.desc}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    <footer className="text-center pt-8">
+                        <p className="text-zinc-600 text-[10px] uppercase tracking-widest font-medium">minimal communicator</p>
+                    </footer>
+                </main>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
